@@ -1,8 +1,8 @@
 import React, { useState, useContext, KeyboardEvent, ChangeEvent } from "react";
 import { GoKebabHorizontal } from "react-icons/go";
+import { FaPlus } from "react-icons/fa6";
 
 import ListActions from "./ListActions";
-import AddCard from "./ManageCard/AddCard";
 import AllCards from "./ManageCard/AllCards";
 
 import { ListObject } from "types/Types";
@@ -62,10 +62,16 @@ function List({ list, index }: { list: ListObject, index: number }) {
 				<GoKebabHorizontal className="text-4xl p-2 rounded hover:bg-teal-100/70" onClick={handleClick} />
 			</div>
 
-			{isListActions ? <ListActions onClose={() => setIsListActions(false)} /> : null}
+			{isListActions ? <ListActions setFormState={handleFormState} onClose={() => setIsListActions(false)} /> : null}
 
 			<AllCards list={list} listIndex={index} isFormVisible={showForm} setFormState={handleFormState} />
-			<AddCard isFormVisible={showForm} setFormState={handleFormState} />
+
+			{!showForm ? (
+				<p className="flex items-center p-2.5 mt-5 rounded cursor-pointer hover:bg-pink-100/60" onClick={() => setShowForm(true)}>
+					<FaPlus className="mr-1.5" />
+                    Add a card
+				</p>
+			) : null}
 
 		</div>
 	);
