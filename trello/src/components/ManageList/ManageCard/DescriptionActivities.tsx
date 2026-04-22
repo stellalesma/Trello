@@ -1,18 +1,22 @@
 import React, { useState, useContext, FormEvent, ChangeEvent } from "react";
 import { IoMenuOutline, IoListOutline } from "react-icons/io5";
 
+import axios from "axios";
+
 import Form from "../../Form";
 import AllActivities from "./AllActivities";
 import { ListContext } from "../../../utils/ListContext";
-import { ListObject, CardObject, StaticAttributs } from "types/Types";
+import { useAccessToken } from "../../../utils/AccessTokenContext";
+import { CardObject, StaticAttributs } from "../../../types/Types";
 
 function DescriptionActivities({ card }: { card: CardObject }) {
+	const { config } = useAccessToken();
+	const { cards, activities, updateCards, updateActivities } = useContext(ListContext);
+
 	const [activity, setActivity] = useState<string>("");
 	const [description, setDescription] = useState<string>(card.description);
 	const [isActivityEditing, setIsActivityEditing] = useState<boolean>(false);
 	const [isDescriptionEditing, setIsDescriptionEditing] = useState<boolean>(false);
-
-	const { getUpdatedId, lists, handleModifiedLists } = useContext(ListContext);
 
 	const descriptionAttrs: StaticAttributs = {
 		id: "descriptionEditing",
@@ -54,30 +58,32 @@ function DescriptionActivities({ card }: { card: CardObject }) {
 		setActivity("");
 	};
 
-	const handleDescriptionSubmit = (e: FormEvent<HTMLFormElement>) => {
+	const handleDescriptionSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
-		const getNewCards = (list: ListObject) => {
-			return list.cards.map((object) => object.id === card.id ? {...object, description: description} : object);
-		};
-		const newLists = lists.map((list) => list.id === card.listId ? {...list, cards: getNewCards(list)} : list);
-
-		handleModifiedLists(newLists);
-		setIsDescriptionEditing(false);
+		await axios.patch(`http://localhost:8081/tasks/${card.id}`, {description: description}, config)
+			.then(() =>	{
+				const newCards = cards.map(item => item.id === card.id ? {...item, description: description} : item);
+				updateCards(newCards);
+				setIsDescriptionEditing(false);
+			})
+			.catch(error => console.error("Error updating task :", error));
 	};
 
-	const handleActivitySubmit = (e: FormEvent<HTMLFormElement>) => {
+	const handleActivitySubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
-		const newActivity = {listId: card.listId, cardId: card.id, id: getUpdatedId(), comment: activity};
-		const getNewCards = (list: ListObject) => {
-			return list.cards.map((object) => object.id === card.id ? {...object, activities: [newActivity, ...object.activities]} : object);
-		};
-		const newLists = lists.map((list) => list.id === card.listId ? {...list, cards: getNewCards(list)} : list); 
-
-		handleModifiedLists(newLists);
-		setIsActivityEditing(false);
-		setActivity("");
+		const newActivity = {content: activity};
+		await axios.post(`http://localhost:8081/comments/${card.id}`, newActivity, config)
+			.then((response) => {
+				const localActivity = {id: response.data.data.id, task_id: card.id, content: activity};
+				updateActivities([localActivity, ...activities]);
+				setIsActivityEditing(false);
+				setActivity("");
+			})
+			.catch((error) => {
+				console.error("Error adding comment :", error);
+			});
 	};
 
 	return (
@@ -124,7 +130,7 @@ function DescriptionActivities({ card }: { card: CardObject }) {
 				</p>
 			)}
 
-			<AllActivities activities={card.activities} />
+			<AllActivities cardId={card.id} />
 		</div>
 	);
 }

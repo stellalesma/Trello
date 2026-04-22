@@ -1,8 +1,15 @@
 import React, { ChangeEvent, FormEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaTrello } from "react-icons/fa";
 
+import axios, { AxiosError } from "axios";
+
+import { useAccessToken } from "../utils/AccessTokenContext";
+
 function Login() {
+	const navigate = useNavigate();
+	const { updateToken } = useAccessToken();
+
 	const [email, setEmail] = useState<string>("");
 	const [password, setPassword] = useState<string>("");
 
@@ -14,12 +21,33 @@ function Login() {
 		setPassword(e.target.value);
 	};
 
-	const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-
+	  
 		if (email.trim() && password.trim()) {
-			console.log("email:", email);
-			console.log("password:", password);
+			const user = {
+				email: email,
+				password: password,
+		    };
+	  
+			try {
+				const response = await axios.post("http://localhost:8081/user/login", user);
+				console.log("Login successful:", user.email);
+				updateToken(response.data.access_token);
+				navigate("/home");
+			} catch (error) {
+				if (error instanceof AxiosError) {
+					if (error.response?.status === 401) {
+						setEmail("");
+						setPassword("");
+						console.error(error.response.data.detail);
+					} else
+						console.error("Error logging in:", error);
+				} else {
+					console.error("Error logging in:", error);
+				}
+			}
+
 		}
 	};
 
@@ -33,10 +61,10 @@ function Login() {
 					Trello
 				</p>
 
-				<label htmlFor="form-description" className="flex justify-center mb-2.5">Log in to continue</label>
+				<p className="flex justify-center mb-2.5">Log in to continue</p>
 				<form id="form-description" className="flex flex-col" onSubmit={handleSubmit}>
-					<input className="p-2.5 rounded border outline-stone-300/70 focus:outline-cyan-400" placeholder="Enter your email..." type="email" value={email} onChange={handleEmail}></input>
-					<input className="p-2.5 mt-2 rounded border outline-stone-300/70 focus:outline-cyan-400" placeholder="Enter your password..." type="password" value={password} onChange={handlePassword}></input>
+					<input id="form-email" name="for-email" className="p-2.5 rounded border outline-stone-300/70 focus:outline-cyan-400" placeholder="Enter your email..." type="email" value={email} onChange={handleEmail}></input>
+					<input id="form-password" name="for-password" className="p-2.5 mt-2 rounded border outline-stone-300/70 focus:outline-cyan-400" placeholder="Enter your password..." type="password" value={password} onChange={handlePassword}></input>
 					<button className="w-full h-10 mt-3.5 font-bold text-base text-white bg-cyan-400 hover:bg-cyan-300" type="submit">Log in</button>
 				</form>
 

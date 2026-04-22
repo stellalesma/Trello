@@ -1,22 +1,25 @@
+export interface User {
+	name: string;
+	email: string;
+	password: string;
+};
+
 export interface ActivityObject {
 	id: number;
-	listId: number;
-	cardId: number;
-	comment: string;
+	task_id: number;
+	content: string;
 }  
   
 export interface CardObject {
-	id: number;
-	title: string;
-	listId: number;
 	description: string;
-	activities: ActivityObject[];
+	title: string;
+	id: number;
+	task_list_id: number;
 }
   
 export interface ListObject {
-	id: number;
 	title: string;
-	cards: CardObject[];
+	id: number;
 }
 
 export interface StaticAttributs {
